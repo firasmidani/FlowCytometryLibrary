@@ -33,12 +33,10 @@ def jointMinVoltageFilter(df,min_dict):
     Returns pandas.DataFrame.
     '''
 
-    for channel,minimum in min_dict.iteritems():
-        
-        df = df[df[channel]>minimum];
-        
-    return df
+    conditions = [df[df[channel]>minimum] for channel,medium in min_dict.iteritems()];
 
+    return df[conjunction(*conditions)]
+        
 def minVoltageFilter(df,min_dict):
     '''
     minVoltageFinder removes events based on minimum bounds for desired channels. 
