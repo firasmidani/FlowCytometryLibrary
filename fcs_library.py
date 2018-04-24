@@ -5,6 +5,24 @@
 import functools
 import numpy as np
 import pandas as pd
+import seaborn as sns
+
+sns.set_style('whitegrid');
+
+def addPseudoCount(df,pc=1e-3):
+    '''
+    addPseudoCount sets a non-zero floor to all values in a dataframe.
+
+    Keyword arguments:
+    df -- pandas.dataframe where rows are events and columns are flow cytometry variables (e.g. channels). Values should be int or float.
+    pc -- Pseudo-count. Default is 0.001
+
+    Returns pandas.DataFrame
+    '''
+
+    df = df.applymap(lambda x: [pc if x<=0 else x][0])
+
+    return df
 
 def conjunction(*conditions):
     '''
@@ -54,18 +72,37 @@ def minVoltageFilter(df,min_dict):
         
     return df
 
-
-def addPseudoCount(df,pc=1e-3):
+def prettyJointPlot(df):
     '''
-    addPseudoCount sets a non-zero floor to all values in a dataframe.
+    prettyJointPlot draws a plot of two variables with bivariate core and adjoining univariate histograms.
 
     Keyword arguments:
-    df -- pandas.dataframe where rows are events and columns are flow cytometry variables (e.g. channels). Values should be int or float.
-    pc -- Pseudo-count. Default is 0.001
+    df -- pandas.dataframe where rows are events and columns are *two* flow cytometry variables (e.g. channels)
 
-    Returns pandas.DataFrame
+    Returns seaborn plot.
     '''
+    
+    x = df.iloc[:,0];
+    y = df.iloc[:,1];
 
-    df = df.applymap(lambda x: [pc if x<=0 else x][0])
+    jp = sns.jointplot(x=x,y=y,
+                       kind="kde",stat_func=None,
+                       size=7,ratio=3,space=9,color="black");
 
-    return df
+    if (np.max(np.max(df))<1000) and (np.min(np.min(df))>0):
+        
+        jp.ax_joint.set_xlim([0,1000]);
+        jp.ax_joint.set_xlim([0,1000]);
+
+    jp.ax_joint.set_xlabel(xy[0],fontsize=30);
+    jp.ax_joint.set_ylabel(xy[1],fontsize=30);
+    jp.ax_joint.tick_params(labelsize=20);
+
+    jp.ax_joint.collect
+
+    jp.ax_joint.collections[0].set_alpha(0); # what is this?
+
+    plt.close(jp.fig) # do not display figure
+
+    return jp
+
