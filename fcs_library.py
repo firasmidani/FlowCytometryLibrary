@@ -1,13 +1,38 @@
 #!/usr/bin/env python
 
-# Library of functions for analysis of flow cytometry data
+# Firas Said Midani
+# firas.midani@duke.edu OR firasmidani@gmail.com
+# Start date: 2018-04-24
+# Final date: 2018-04-24
+
+# DESCRIPTION Library of functions for analysis of flow cytometry data
+
+# TABLE OF CONTENTS
+#
+#|-- Plotting & Visualization
+#    |-- prettyJointPlot
+#
+#|-- Data transformations
+#    |-- addPseudoCount
+#    |-- joint MinVoltageFilter
+#    |-- minVoltageFilter
+#
+#|-- Syntax reductions
+#    |-- conjuction
+#
+
+# IMPORT NECESSARY LIBRARIES
 
 import functools
 import numpy as np
 import pandas as pd
 import seaborn as sns
 
+# SET PARAMETERS & STYLES
+
 sns.set_style('whitegrid');
+
+# FUNCTIONS
 
 def addPseudoCount(df,pc=1e-3):
     '''
@@ -81,15 +106,15 @@ def prettyJointPlot(df):
 
     Returns seaborn plot.
     '''
-    
-    x = df.iloc[:,0];
+
+    x = df.iloc[:,0]; 
     y = df.iloc[:,1];
 
     jp = sns.jointplot(x=x,y=y,
                        kind="kde",stat_func=None,
                        size=7,ratio=3,space=9,color="black");
 
-    if (np.max(np.max(df))<1000) and (np.min(np.min(df))>0):
+    if (np.max(np.max(df))<1000) and (np.min(np.min(df))>0): 
         
         jp.ax_joint.set_xlim([0,1000]);
         jp.ax_joint.set_xlim([0,1000]);
@@ -97,8 +122,6 @@ def prettyJointPlot(df):
     jp.ax_joint.set_xlabel(xy[0],fontsize=30);
     jp.ax_joint.set_ylabel(xy[1],fontsize=30);
     jp.ax_joint.tick_params(labelsize=20);
-
-    jp.ax_joint.collect
 
     jp.ax_joint.collections[0].set_alpha(0); # what is this?
 
