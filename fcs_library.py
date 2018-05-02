@@ -9,12 +9,16 @@
 
 # TABLE OF CONTENTS
 #
+#|-- FCS Data Processing
+#    |-- dataFromFCS
+#    |-- readFCS
+#
 #|-- Plotting & Visualization
 #    |-- prettyJointPlot
 #
 #|-- Data transformations
 #    |-- addPseudoCount
-#    |-- joint MinVoltageFilter
+#    |-- jointMinVoltageFilter
 #    |-- minVoltageFilter
 #
 #|-- Syntax reductions
@@ -27,6 +31,8 @@ import functools
 import numpy as np
 import pandas as pd
 import seaborn as sns
+
+from FlowCytometryTools import FCMeasurement
 
 # SET PARAMETERS & STYLES
 
@@ -62,8 +68,66 @@ def conjunction(*conditions):
     np.logical_and can conjugate two arguments only. 
     Functools enables us to handle more than two. 
     See https://stackoverflow.com/questions/13611065/efficient-way-to-apply-multiple-filters-to-pandas-dataframe-or-series
+
+    Questions:
+    would one or two conditions be fine?
     '''
     return functools.reduce(np.logical_and,conditions)
+
+def dataFromFCS(fcs,ZeroFloor=True):
+    '''
+    dataFromFCS 
+
+    Keyword arguments:
+    fcs -- data container with format of FlowCytometryTools.core.containers.FCMeasurement
+    ZeroFloor -- Boovelean on whether to conver negative infinity values to zero.
+
+    Returns 
+    fcs -- pandas.DataFrame where rows are flow events and columsn are flow channels
+    '''
+
+    # david lab uses MACSQuant VYB flow-cytometery machine
+    vyb_channel_dict = {
+        'dsRed/txRed-A':'RFP-A',
+        'dsRed/txRed-H':'RFP-H',
+        'dsRed/txRed-W':'RFP-W',
+        'GFP/FITC-A':'GFP-A',
+        'GFP/FITC-H':'GFP-H',
+        'GFP/FITC-W':'GFP-W',
+        'PI/LSS-mKate-A':'PI-A',
+        'PI/LSS-mKate-H':'PI-H',
+        'PI/LSS-mKate-W':'PI-W'
+    }
+
+    reporter_channel_dict = {
+        'Y2-A':'RFP-A',
+        'Y2-H':'RFP-H',
+        'Y2-W':'RFP-W',
+        'B1-A':'GFP-A',
+        'B1-H':'GFP-H',
+        'B1-W':'GFP-W',
+        'B2-A':'PI-A',
+        'B2-H':'PI-H',
+        'B2-W':'PI-W'
+    }
+
+    if 'Y2-A' in fcs.data.keys():
+
+        columns_dict = reporter_channel_dict;
+
+    elif 'dsRed/txRed' in fcs.data.keys():
+
+        columns_dict = vyb_channel_dict
+
+
+    dataFromFCS = fcs.data
+
+    if ZeroFloor: 
+        dataFromFCS = dataFromFCS.replace(-np.inf,0)
+
+    dataFromFCS = dataFromFCS.rename(columns=columns_dict);
+
+    return dataFromFCS
 
 def jointMinVoltageFilter(df,min_dict):
     '''
@@ -74,7 +138,10 @@ def jointMinVoltageFilter(df,min_dict):
     min_dict -- Dictionary of channels as keys and minima as values.
 
     Returns pandas.DataFrame.
-    '''
+ 
+    Questions:
+    would one or two conditions be fine?
+   '''
 
     conditions = [df[df[channel]>minimum] for channel,medium in min_dict.iteritems()];
 
@@ -96,6 +163,27 @@ def minVoltageFilter(df,min_dict):
         df = df[df[channel]>minimum];
         
     return df
+
+def readFCS(filepath):
+    '''
+    readFCS uses FlowCytometryTools package to open an FCS file
+
+    Keyword arguments:
+    filepath -- filename including absolute or relative path. 
+
+    Returns 
+    fcs -- data container with format of FlowCytometryTools.core.containers.FCMeasurement
+    '''
+
+    # extract filename from path
+    if '/' in filepath:
+        filename = filepath.split('/')[-1][:-4]
+    else: 
+        filename = filepath
+
+    fcs = FCMeasurement(ID=filepath,datafile=filepath)
+
+    return fcs
 
 def prettyJointPlot(df):
     '''
