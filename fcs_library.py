@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 # Firas Said Midani
-# firas.midani@duke.edu OR firasmidani@gmail.com
 # Start date: 2018-04-24
 # Final date: 2018-04-24
 
