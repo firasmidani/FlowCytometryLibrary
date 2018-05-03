@@ -8,24 +8,29 @@
 
 # TABLE OF CONTENTS
 #
-#|-- FCS Data Processing
-#    |-- dataFromFCS
-#    |-- readFCS
-#
-#|-- Plotting & Visualization
-#    |-- prettyJointPlot
 #
 #|-- Data transformations
 #    |-- addPseudoCount
 #    |-- jointMinVoltageFilter
 #    |-- minVoltageFilter
 #
+#|-- FCS Data Processing
+#    |-- dataFromFCS
+#    |-- readFCS
+#
+#|-- Plotting & Visualization
+#    |-- prettyJointPlot
+
 #|-- Syntax reductions
 #    |-- conjuction
+#
+#|-- System organization
+#    |-- listFiles
 #
 
 # IMPORT NECESSARY LIBRARIES
 
+import os
 import functools
 import numpy as np
 import pandas as pd
@@ -145,7 +150,27 @@ def jointMinVoltageFilter(df,min_dict):
     conditions = [df[df[channel]>minimum] for channel,medium in min_dict.iteritems()];
 
     return df[conjunction(*conditions)]
-        
+
+def listFiles(directory,suffix='.fcs',removeSuffix=True):
+    '''
+    listFiles identifies files in a directory with a certain suffix and can removes suffix
+
+    Keyword arguments
+    directory -- string of directory with either absolute or relative path
+    suffix -- string for suffix in filenames 
+    removeSuffix -- strips suffix from filenames in list
+
+    Returns list of filenames
+    '''
+
+    list_files = os.listdir(directory);
+    list_files = [ff for ff in list_files if ff.endswith(suffix)]
+
+    if removeSuffix:
+        list_files = [lf.strip('.fcs') for lf in list_files];
+
+    return list_files
+ 
 def minVoltageFilter(df,min_dict):
     '''
     minVoltageFinder removes events based on minimum bounds for desired channels. 
