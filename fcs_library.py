@@ -2,7 +2,7 @@
 
 # Firas Said Midani
 # Start date: 2018-04-24
-# Final date: 2018-05-02
+# Final date: 2018-05-03
 
 # DESCRIPTION Library of functions for analysis of flow cytometry data
 
@@ -160,7 +160,7 @@ def listFiles(directory,suffix='.fcs',removeSuffix=True):
     suffix -- string for suffix in filenames 
     removeSuffix -- strips suffix from filenames in list
 
-    Returns list of filenames
+    Returns dictionary with filenames as keys and filepaths as vlaues
     '''
 
     list_files = os.listdir(directory);
@@ -168,8 +168,13 @@ def listFiles(directory,suffix='.fcs',removeSuffix=True):
 
     if removeSuffix:
         list_files = [lf.strip('.fcs') for lf in list_files];
+        list_paths = ['%s/%s%s' % (directory,ff,suffix) for ff in list_files]
+    else:
+        list_paths = ['%s/%s' % (directory,ff) for ff in list_files]
 
-    return list_files
+    out_list = dict(zip(list_files,list_paths))
+
+    return out_list
  
 def minVoltageFilter(df,min_dict):
     '''
