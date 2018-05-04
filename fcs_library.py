@@ -26,6 +26,7 @@
 #
 #|-- System organization
 #    |-- listFiles
+#    |-- sampleNumber
 #
 
 # IMPORT NECESSARY LIBRARIES
@@ -33,6 +34,7 @@
 import os
 import functools
 import numpy as np
+import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
@@ -119,7 +121,7 @@ def dataFromFCS(fcs,ZeroFloor=True):
 
         columns_dict = reporter_channel_dict;
 
-    elif 'dsRed/txRed' in fcs.data.keys():
+    elif 'dsRed/txRed-A' in fcs.data.keys():
 
         columns_dict = vyb_channel_dict
 
@@ -147,7 +149,7 @@ def jointMinVoltageFilter(df,min_dict):
     would one or two conditions be fine?
    '''
 
-    conditions = [df[df[channel]>minimum] for channel,medium in min_dict.iteritems()];
+    conditions = [df[channel]>minimum for channel,minimum in min_dict.iteritems()];
 
     return df[conjunction(*conditions)]
 
@@ -193,6 +195,38 @@ def minVoltageFilter(df,min_dict):
         
     return df
 
+def prettyJointPlot(df):
+    '''
+    prettyJointPlot draws a plot of two variables with bivariate core and adjoining univariate histograms.
+
+    Keyword arguments:
+    df -- pandas.dataframe where rows are events and columns are *two* flow cytometry variables (e.g. channels)
+
+    Returns seaborn plot.
+    '''
+
+    x = df.iloc[:,0]; 
+    y = df.iloc[:,1];
+
+    jp = sns.jointplot(x=x,y=y,
+                       kind="kde",stat_func=None,
+                       size=7,ratio=3,space=0,color="black");
+
+    if (np.max(np.max(df))<1000) and (np.min(np.min(df))>0): 
+        
+        jp.ax_joint.set_xlim([0,1000]);
+        jp.ax_joint.set_xlim([0,1000]);
+
+    jp.ax_joint.set_xlabel(x.name,fontsize=30);
+    jp.ax_joint.set_ylabel(y.name,fontsize=30);
+    jp.ax_joint.tick_params(labelsize=20);
+
+    jp.ax_joint.collections[0].set_alpha(0); # what is this?
+
+    plt.close(jp.fig) # do not display figure
+
+    return jp
+
 def readFCS(filepath):
     '''
     readFCS uses FlowCytometryTools package to open an FCS file
@@ -214,35 +248,17 @@ def readFCS(filepath):
 
     return fcs
 
-def prettyJointPlot(df):
+
+def sampleNumber(filename):
     '''
-    prettyJointPlot draws a plot of two variables with bivariate core and adjoining univariate histograms.
+    sampleNumber extracts flow cytometry sample number from filenmae
 
-    Keyword arguments:
-    df -- pandas.dataframe where rows are events and columns are *two* flow cytometry variables (e.g. channels)
+    filename -- generic file name by MACSQuant VYB
 
-    Returns seaborn plot.
+    Returns integer
     '''
 
-    x = df.iloc[:,0]; 
-    y = df.iloc[:,1];
+    return int(filename.split('.')[-1])
 
-    jp = sns.jointplot(x=x,y=y,
-                       kind="kde",stat_func=None,
-                       size=7,ratio=3,space=9,color="black");
 
-    if (np.max(np.max(df))<1000) and (np.min(np.min(df))>0): 
-        
-        jp.ax_joint.set_xlim([0,1000]);
-        jp.ax_joint.set_xlim([0,1000]);
-
-    jp.ax_joint.set_xlabel(xy[0],fontsize=30);
-    jp.ax_joint.set_ylabel(xy[1],fontsize=30);
-    jp.ax_joint.tick_params(labelsize=20);
-
-    jp.ax_joint.collections[0].set_alpha(0); # what is this?
-
-    plt.close(jp.fig) # do not display figure
-
-    return jp
 
