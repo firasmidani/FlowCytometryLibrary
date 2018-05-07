@@ -216,7 +216,7 @@ def prettyJointPlot(df):
         
         jp.ax_joint.set_xlim([0,1000]);
         jp.ax_joint.set_xlim([0,1000]);
-
+0
     jp.ax_joint.set_xlabel(x.name,fontsize=30);
     jp.ax_joint.set_ylabel(y.name,fontsize=30);
     jp.ax_joint.tick_params(labelsize=20);
@@ -259,6 +259,3 @@ def sampleNumber(filename):
     '''
 
     return int(filename.split('.')[-1])
-
-
-
