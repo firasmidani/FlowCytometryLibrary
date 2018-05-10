@@ -153,6 +153,38 @@ def jointMinVoltageFilter(df,min_dict):
 
     return df[conjunction(*conditions)]
 
+def jointVoltageFilter(df,opr_dict):
+    '''
+    jointVoltageFilter removes events based on joint operation on desired channels
+
+    Kewyord arguments:
+    df -- pandas.dataframe where rows are events and columns are flow cytometry variables (e.g. channels)
+    opr_dict -- Dictionary of channels as keys and operation as np.array with first element as one of {>,<,=} and second as int or float.
+
+    Returns pandas.DataFrame.
+ 
+    Questions:
+    would one or two conditions be fine?
+    '''
+
+    conds = []
+
+    for channel,rule in opr_dict.iteritems():
+            
+        if rule[0]=='>':
+            
+            conds.append(data[channel]>rule[1])
+        
+        elif rule[0]=='<':
+            
+            conds.append(data[channel]<rule[1])
+            
+        elif rule[0]=='=':
+            
+            conds.append(data[channel]==rule[1])
+        
+    return data[conjunction(*conds)]   
+
 def listFiles(directory,suffix='.fcs',removeSuffix=True):
     '''
     listFiles identifies files in a directory with a certain suffix and can removes suffix
