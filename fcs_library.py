@@ -20,6 +20,7 @@
 #
 #|-- Plotting & Visualization
 #    |-- prettyJointPlot
+#    |-- prettyKDEPlot
 
 #|-- Syntax reductions
 #    |-- conjuction
@@ -27,6 +28,7 @@
 #|-- System organization
 #    |-- listFiles
 #    |-- sampleNumber
+#    |-- getFormattedTime
 #
 
 # IMPORT NECESSARY LIBRARIES
@@ -37,6 +39,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
+import time
 
 from FlowCytometryTools import FCMeasurement
 
@@ -102,7 +105,10 @@ def dataFromFCS(fcs,ZeroFloor=True):
         'GFP/FITC-W':'GFP-W',
         'PI/LSS-mKate-A':'PI-A',
         'PI/LSS-mKate-H':'PI-H',
-        'PI/LSS-mKate-W':'PI-W'
+        'PI/LSS-mKate-W':'PI-W',
+        'CFP/VioBlue-A':'SYTO-A',
+        'CFP/VioBlue-H':'SYTO-H',
+        'CFP/VioBlue-W':'SYTO-W'
     }
 
     reporter_channel_dict = {
@@ -114,7 +120,10 @@ def dataFromFCS(fcs,ZeroFloor=True):
         'B1-W':'GFP-W',
         'B2-A':'PI-A',
         'B2-H':'PI-H',
-        'B2-W':'PI-W'
+        'B2-W':'PI-W',
+        'V1-A':'SYTO-A',
+        'V1-H':'SYTO-H',
+        'V1-W':'SYTO-W'
     }
 
     if 'Y2-A' in fcs.data.keys():
@@ -134,6 +143,18 @@ def dataFromFCS(fcs,ZeroFloor=True):
     dataFromFCS = dataFromFCS.rename(columns=columns_dict);
 
     return dataFromFCS
+
+def getFormattedTime():
+    '''
+    Constructs time stamp formatted as Year-Month-Day-Hour_Minute_Second
+
+    e.g. '2018-10-10-13-51-12'
+    '''
+
+    ts = time.localtime()
+    ts = time.strftime("%Y-%m-%d-%H-%M-%S",ts)
+
+    return ts
 
 def jointMinVoltageFilter(df,min_dict):
     '''
@@ -173,17 +194,26 @@ def jointVoltageFilter(df,opr_dict):
             
         if rule[0]=='>':
             
-            conds.append(data[channel]>rule[1])
+            conds.append(df[channel]>rule[1])
+            
+        elif rule[0]=='>=':
+            
+            conds.append(df[channel]>=rule[1])
         
         elif rule[0]=='<':
             
-            conds.append(data[channel]<rule[1])
+            conds.append(df[channel]<rule[1])
+            
+        elif rule[0]=='<=':
+            
+            conds.append(df[channel]<=rule[1])
+        
             
         elif rule[0]=='=':
             
-            conds.append(data[channel]==rule[1])
+            conds.append(df[channel]==rule[1])
         
-    return data[conjunction(*conds)]   
+    return df[conjunction(*conds)]   
 
 def listFiles(directory,suffix='.fcs',removeSuffix=True):
     '''
@@ -258,6 +288,37 @@ def prettyJointPlot(df):
     plt.close(jp.fig) # do not display figure
 
     return jp
+
+def prettyKDEPlot(df,ax):
+    '''
+    prettyJointPlot draws a plot of two variables with bivariate core and adjoining univariate histograms.
+
+    Keyword arguments:
+    df -- pandas.dataframe where rows are events and columns are *two* flow cytometry variables (e.g. channels)
+
+    Returns seaborn plot.
+    '''
+
+    x = df.iloc[:,0]; 
+    y = df.iloc[:,1];
+
+    pal = sns.light_palette("Black", as_cmap=True)
+    kd = sns.kdeplot(x,y,shade=True,shade_lowest=False,cmap=pal,ax=ax)
+
+    if (np.max(np.max(df))<1000) and (np.min(np.min(df))>0): 
+        
+        kd.set_xlim([0,1000]);
+        kd.set_ylim([0,1000]);
+
+    # jp.ax_joint.set_xlabel(x.name,fontsize=30);
+    # jp.ax_joint.set_ylabel(y.name,fontsize=30);
+    # jp.ax_joint.tick_params(labelsize=20);
+
+    # jp.ax_joint.collections[0].set_alpha(0); # what is this?
+
+    #plt.close(jp.fig) # do not display figure
+
+    return kd
 
 def readFCS(filepath):
     '''
