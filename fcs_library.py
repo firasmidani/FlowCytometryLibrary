@@ -141,8 +141,7 @@ def countEvents(df,rfp=525,gfp=525):
     Returns
     count -- list of event counts for BO, BF, BT, and BV, respectively
     '''    
-
-
+    
     count = [float(df[(df['RFP-A']<rfp) & (df['GFP-A']<gfp)].shape[0]), 
              float(df[(df['RFP-A']>=rfp) & (df['GFP-A']<gfp)].shape[0]),
              float(df[(df['RFP-A']<rfp) & (df['GFP-A']>=gfp)].shape[0]),
