@@ -345,6 +345,8 @@ def getGates(df,sugar,tp):
     dictionary with two keyes for gfp and rfp, and values are gates [low, high]
     '''
 
+    gates_list = [];
+    
     species_pairs = {'RFP':[('BO','BF'),('BT','BV')],
                      'GFP':[('BO','BT'),('BF','BV')]}
 
