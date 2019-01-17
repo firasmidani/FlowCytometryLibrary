@@ -34,6 +34,7 @@
 #    |-- annotatePlot
 #    |-- initializeGrid
 #    |-- plotGates
+#    |-- plotMixedTimeSeries
 #    |-- prettyJointPlot
 #    |-- prettyKDEPlot
 #
