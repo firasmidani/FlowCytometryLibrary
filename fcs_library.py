@@ -28,6 +28,7 @@
 #    |-- dataFromFCS
 #    |-- readFCS
 #    |-- getEvents
+#    |-- getGates
 # 
 #
 #|-- Plotting & Visualization
