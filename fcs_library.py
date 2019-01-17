@@ -494,6 +494,92 @@ def plotGates(ax,ax_rfp,ax_gfp,rfp=525,gfp=525):
 
     return None
 
+def plotMixedTimeSeries(df,Sugar):
+    '''
+    plotMiedTimeSeries returns a figure with two sub-plots. Left sub-plot is a stacked bar plot 
+    of the relative abundance of four Bacteroides species over three or four time points. The 
+    right sub-plot is the absolute abundance of the whole community.
+
+    Keyword arguments
+    df -- pandas.DataFrame whre each row is a flow sample and variables include 
+          'Sugar','Species','BO','BF','BT', and 'BV'
+    Sugar -- STR
+
+    Returns
+    fig -- matplotlib.figure.Figure
+    ax -- list of matplotlib.axes._subplots.AxesSubplot
+    '''
+
+    color_dict = {'BO':'navy','BF':'red','BT':'green','BV':'gold'};
+    label_dict = {'BO':'Bo','BF':'Bf','BT':'Bt','BV':'Bv'};
+
+    # get relative abundances
+    df_sub = df[df.isin({'Sugar':[Sugar],'Species':['MIX']}).sum(1)==2];
+    df_sub = df_sub.sort_values(['TimePoint']);
+    df_sub
+
+    fig,axes = plt.subplots(1,2,figsize=[10,5]);
+
+    ax_l,ax_r = axes[0],axes[1]
+
+    # some data have only three time points (x2 reps) while others have four
+    if df_sub.shape[0]==6:
+        bottom = [0]*6;
+        x_ticks = [0,1,3,4,9,10];
+    elif df_sub.shape[0]==8:
+        bottom = [0]*8;
+        x_ticks=[0,1,3,4,6,7,9,10];
+
+    # relative abundance in a stacked bar plot
+    for idx,row in df_sub.loc[:,['Bo','Bf','Bt','Bv']].T.iterrows():
+
+        ax_l.bar(x_ticks,row.values,bottom=bottom,
+               edgecolor='black',color=color_dict[idx.upper()],
+               alpha=0.7,width=0.9);
+
+        bottom += row.values;
+        
+    # absolute abundance plot in a scatter plot
+    x = df_sub.loc[:,['TimePoint','Counts']].iloc[:,0];
+    y = df_sub.loc[:,['TimePoint','Counts']].iloc[:,1];
+
+    ax_r.scatter(x,y,s=100,color=(0,0,0,0.75));
+
+    # adjust xtick labels
+    if df_sub.shape[0]==6:
+        plt.setp(ax_l,xticks=[0.5,3.5,9.5],xticklabels=[24,48,96]);
+    elif df_sub.shape[0]==8:
+        plt.setp(ax_l,xticks=[0.5,3.5,6.5,9.5],xticklabels=[24,48,72,96]);
+
+    # labels and title
+    ax_l.set_title(Sugar,fontsize=20);
+
+    ax_l.set_xlabel('Time (hours)',fontsize=20);
+    ax_l.set_ylabel('Relative Abundance',fontsize=20);
+
+    ax_r.set_xlabel('Time (hours)',fontsize=20);
+    ax_r.set_ylabel('Total Abundance',fontsize=20);
+
+    # adjust y-axis for scatter plot
+    ax_r.yaxis.tick_right();
+    ax_r.yaxis.set_label_position('right');
+
+    # adjust labels sizes
+    [ii.set(fontsize=20) for ii in ax_l.get_xticklabels()+ax_l.get_yticklabels()];
+    [ii.set(fontsize=20) for ii in ax_r.get_xticklabels()+ax_r.get_yticklabels()];
+
+    # adjust x-axis and y-axis tick labels 
+    plt.setp(ax_r,
+             yticks=[0,0.5e5,1e5,1.5e5,2.0e5],
+             yticklabels=['0K','50K','100K','150K','200K']);
+    plt.setp(ax_r,xticks=[0,24,48,72,96]);
+
+    # adjust y-axis limites
+    ax_l.set_ylim([0,1.05]);
+    ax_r.set_ylim([0,250000]);
+    
+    return fig,axes
+
 def prettyJointPlot(df):
     '''
     prettyJointPlot draws a plot of two variables with bivariate core and adjoining univariate histograms.
