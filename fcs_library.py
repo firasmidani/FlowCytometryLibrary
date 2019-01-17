@@ -2,7 +2,7 @@
 
 # Firas Said Midani
 # Start date: 2018-04-24
-# Final date: 2019-01-16
+# Final date: 2019-01-17
 
 # DESCRIPTION Library of functions for analysis of flow cytometry data
 
@@ -335,6 +335,64 @@ def getFormattedTime():
 
     return ts
 
+def getGates(df,sugar,tp):
+    '''
+    getGates determines gates that divvy up flow cytometry into four quadrants
+    based on flow cytometry of mono-cultures at user-defined time-point on user-defined sugar.
+
+    Returns
+    dictionary with two keyes for gfp and rfp, and values are gates [low, high]
+    '''
+
+    species_pairs = {'RFP':[('BO','BF'),('BT','BV')],
+                     'GFP':[('BO','BT'),('BF','BV')]}
+
+    samples_pairs = list(itertools.product(range(2),repeat=2))
+
+    for band in ['GFP','RFP']:
+
+        gates_list[band] = [[],[]]; # two for gfp, two for rfp. lower gate first.
+
+        for zz,species in enumerate(species_pairs['RFP']):
+
+            for cnt,samples in enumerate(samples_pairs):
+
+                xx_coords = [];
+                yy_coords = [];
+
+                for ii,jj in zip(species,samples):
+
+                    # ii for species and jj for technical replicate
+                    
+                    events,total_abundance = getEvents(df,sugar,ii,tp,N=1000,SYTO=400)
+
+                    xx_temp,yy_temp = getSignalPDF(events[jj]['RFP-A']);
+
+                    xx_coords.append(xx_temp);
+                    yy_coords.append([float(total_abundance[jj])*gg for gg in yy_temp]);
+
+                x_1,y_1 = xx_coords[0],yy_coords[0]
+                x_2,y_2 = xx_coords[1],yy_coords[1]
+
+                xx,yy = findIntersection(x_1,x_2,y_1,y_2)
+
+                if len(xx)>1:
+
+                    xx_diff = np.abs(xx-400)
+                    xx_min = np.min(xx_diff)
+                    xx_idx = np.where(xx_diff==xx_min)[0]
+                    xx,yy = xx[xx_idx][0],yy[xx_idx][0]
+
+                else:
+
+                    xx,yy = xx[0],yy[0]
+
+                gates_list[band][zz] += [xx]; 
+
+            gates_list[band][zz] = np.mean(gates_list[band][zz])
+
+    return gates_list
+
 def getSignalPDF(events,params=[0,1000,1e-1]):
     '''
     getSignalPDF estimates the probability distribution function for data based on user-specified PARAMETERS
@@ -490,8 +548,8 @@ def plotGates(ax,ax_rfp,ax_gfp,rfp=525,gfp=525):
     ax.axvline(x=rfp,ymin=0,ymax=1,lw=3,linestyle='--',color='brown',alpha=0.40)
     ax.axhline(y=gfp,xmin=0,xmax=1,lw=3,linestyle='--',color='brown',alpha=0.40)
 
-    ax2.axvline(x=rfp,ymin=0,ymax=1,lw=3,linestyle='--',color='brown',alpha=0.40)
-    ax3.axhline(y=gfp,xmin=0,xmax=1,lw=3,linestyle='--',color='brown',alpha=0.40)
+    ax_rfp.axvline(x=rfp,ymin=0,ymax=1,lw=3,linestyle='--',color='brown',alpha=0.40)
+    ax_gfp.axhline(y=gfp,xmin=0,xmax=1,lw=3,linestyle='--',color='brown',alpha=0.40)
 
     return None
 
