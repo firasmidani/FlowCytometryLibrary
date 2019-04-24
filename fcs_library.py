@@ -151,6 +151,78 @@ def countEvents(df,rfp=525,gfp=525):
     
     return count
 
+
+def countEventsDynamic(df,gates):
+    '''
+
+    Args
+
+    df -- pandas.DataFrame with variables of RFP-A & GFP-A
+    gates -- two-layered dictionary with first layer rof GFP/RFP and second layer is species pairs (total of 4 values)
+
+    '''
+
+    h_1 = gates['GFP'][('BO','BT')];
+    h_2 = gates['GFP'][('BF','BV')];
+    v_1 = gates['RFP'][('BO','BF')];
+    v_2 = gates['RFP'][('BT','BV')];
+
+    if ((v_2 > v_1) & (h_2 > h_1)): 
+
+        BO = float(df[(df['RFP-A'] < v_1) & (df['GFP-A'] < h_1)].shape[0]);
+        BV = float(df[(df['RFP-A'] > v_2) & (df['GFP-A'] > h_2)].shape[0]);
+
+        BF_BT = float(df[((df['RFP-A']>v_1) & (df['RFP-A']<v_2)) & ((df['GFP-A']>h_1) & (df['GFP-A']<h_2))].shape[0]);
+
+        BF = float(df[(df['RFP-A'] > v_1) & (df['GFP-A'] < h_2)].shape[0]) - BF_BT
+        BT = float(df[(df['RFP-A'] < v_2) & (df['GFP-A'] > h_1)].shape[0]) - BF_BT
+
+        BO_BV = 0;
+        BX = 0;
+
+    elif ((v_1 > v_2) & (h_1 > h_2)):
+        
+        BF = float(df[(df['RFP-A'] > v_1) & (df['GFP-A'] < h_2)].shape[0]);
+        BT = float(df[(df['RFP-A'] < v_2) & (df['GFP-A'] > h_1)].shape[0]);
+
+        BO_BV = float(df[((df['RFP-A']>v_2) & (df['RFP-A']<v_1)) & ((df['GFP-A']>h_2) & (df['GFP-A']<h_1))].shape[0]);
+
+        BO = float(df[(df['RFP-A'] < v_1) & (df['GFP-A'] < h_1)].shape[0]) - BO_BV
+        BV = float(df[(df['RFP-A'] > v_2) & (df['GFP-A'] > h_2)].shape[0]) - BO_BV
+
+        BF_BT = 0;
+        BX = 0;
+
+    elif ((v_2 > v_1) & (h_1 > h_2)):
+
+        BO = float(df[(df['RFP-A'] < v_1) & (df['GFP-A'] < h_1)].shape[0]);
+        BF = float(df[(df['RFP-A'] > v_1) & (df['GFP-A'] < h_2)].shape[0]);
+        BT = float(df[(df['RFP-A'] < v_2) & (df['GFP-A'] > h_1)].shape[0]);
+        BV = float(df[(df['RFP-A'] > v_2) & (df['GFP-A'] > h_2)].shape[0]);
+
+        BF_BT = 0;
+        BO_BV = 0;
+
+        BX = float(df[((df['RFP-A']>v_1) & (df['RFP-A']<v_2)) & ((df['GFP-A']<h_1) & (df['GFP-A']>h_2))].shape[0]);
+
+    elif ((v_1 > v_2) & (h_2 > h_1)):
+
+        BO = float(df[(df['RFP-A'] < v_1) & (df['GFP-A'] < h_1)].shape[0]);
+        BF = float(df[(df['RFP-A'] > v_1) & (df['GFP-A'] < h_2)].shape[0]);
+        BT = float(df[(df['RFP-A'] < v_2) & (df['GFP-A'] > h_1)].shape[0]);
+        BV = float(df[(df['RFP-A'] > v_2) & (df['GFP-A'] > h_2)].shape[0]);
+
+        BF_BT = 0;
+        BO_BV = 0;
+
+        BX = float(df[((df['RFP-A']>v_1) & (df['RFP-A']<v_2)) & ((df['GFP-A']>h_1) & (df['GFP-A']<h_2))].shape[0]);
+
+    count = [BO,BF,BT,BV,BO_BV,BF_BT,BX]
+
+    count = pd.DataFrame(count, index=['BO','BF','BT','BV','BO_BV','BF_BT','BX'])
+
+    return count
+
 def dataFromFCS(fcs,ZeroFloor=True):
     '''
     dataFromFCS 
@@ -221,7 +293,7 @@ def findIntersection(x_1,x_2,y_1,y_2,interval=1e-4):
 
     Keyword arguments:
     x_1 -- numpy.array of x-values for first array
-    x_2 -- numpy.array of x-values for second array
+    x_2 -- numpy.array of x-values for second arrayter
     y_1 -- numpy.array of y-values for first array
     y_2 -- numpy.array of y-values for second array
 
@@ -345,8 +417,8 @@ def getGates(df,sugar,tp):
     dictionary with two keyes for gfp and rfp, and values are gates [low, high]
     '''
 
-    gates_list = [];
-    
+    gates = {};
+
     species_pairs = {'RFP':[('BO','BF'),('BT','BV')],
                      'GFP':[('BO','BT'),('BF','BV')]}
 
@@ -354,9 +426,11 @@ def getGates(df,sugar,tp):
 
     for band in ['GFP','RFP']:
 
-        gates_list[band] = [[],[]]; # two for gfp, two for rfp. lower gate first.
+        gates[band] = {}; # two for gfp, two for rfp. lower gate first.
 
-        for zz,species in enumerate(species_pairs['RFP']):
+        for zz,species in enumerate(species_pairs[band]):
+
+            gates[band][species] = [];
 
             for cnt,samples in enumerate(samples_pairs):
 
@@ -369,7 +443,7 @@ def getGates(df,sugar,tp):
                     
                     events,total_abundance = getEvents(df,sugar,ii,tp,N=1000,SYTO=400)
 
-                    xx_temp,yy_temp = getSignalPDF(events[jj]['RFP-A']);
+                    xx_temp,yy_temp = getSignalPDF(events[jj]['%s-A' % band]);
 
                     xx_coords.append(xx_temp);
                     yy_coords.append([float(total_abundance[jj])*gg for gg in yy_temp]);
@@ -378,8 +452,12 @@ def getGates(df,sugar,tp):
                 x_2,y_2 = xx_coords[1],yy_coords[1]
 
                 xx,yy = findIntersection(x_1,x_2,y_1,y_2)
+                
+                if len(xx)==0:
+                    xx=0;
+                    yy=0;
 
-                if len(xx)>1:
+                elif len(xx)>1:
 
                     xx_diff = np.abs(xx-400)
                     xx_min = np.min(xx_diff)
@@ -390,11 +468,12 @@ def getGates(df,sugar,tp):
 
                     xx,yy = xx[0],yy[0]
 
-                gates_list[band][zz] += [xx]; 
+                gates[band][species] += [xx]; 
 
-            gates_list[band][zz] = np.mean(gates_list[band][zz])
+            gates[band][species] = np.median(gates[band][species])
 
-    return gates_list
+
+    return gates
 
 def getSignalPDF(events,params=[0,1000,1e-1]):
     '''
@@ -556,6 +635,40 @@ def plotGates(ax,ax_rfp,ax_gfp,rfp=525,gfp=525):
 
     return None
 
+def plotDynamicGates(ax,ax_rfp,ax_gfp,gates):
+    '''
+    plotDynamicGates adds vertical and horizonatl lines on plot to indicate voltage gates
+
+    Keyword arguments
+    ax -- matplot.axes._subplots.AxesSubplot for main sub-plot (countour plot)
+    ax_rfp -- matplot.axes._subplots.AxesSubplot for marginal top-plot (RFP-A)
+    ax_gfp -- matplot.axes._subplots.AxesSubplot for marginal right-plot (GFP-A)
+    rfp -- INT voltage gate for RFP-A signal
+    gfp -- INT volutage gate for GFP-A signal
+
+    Returns None
+    '''
+
+    h_1 = gates['GFP'][('BO','BT')];
+    h_2 = gates['GFP'][('BF','BV')];
+    v_1 = gates['RFP'][('BO','BF')];
+    v_2 = gates['RFP'][('BT','BV')];
+
+    ax.axvline(x=v_1,ymin=0,ymax=1,lw=1,linestyle='--',color='brown',alpha=0.40)
+    ax.axvline(x=v_2,ymin=0,ymax=1,lw=1,linestyle='--',color='brown',alpha=0.40)
+
+    ax.axhline(y=h_1,xmin=0,xmax=1,lw=1,linestyle='--',color='brown',alpha=0.40)
+    ax.axhline(y=h_2,xmin=0,xmax=1,lw=1,linestyle='--',color='brown',alpha=0.40)
+
+    ax_rfp.axvline(x=v_1,ymin=0,ymax=1,lw=1,linestyle='--',color='brown',alpha=0.40)
+    ax_rfp.axvline(x=v_2,ymin=0,ymax=1,lw=1,linestyle='--',color='brown',alpha=0.40)
+
+    ax_gfp.axhline(y=h_1,xmin=0,xmax=1,lw=1,linestyle='--',color='brown',alpha=0.40)
+    ax_gfp.axhline(y=h_2,xmin=0,xmax=1,lw=1,linestyle='--',color='brown',alpha=0.40)
+
+    return None
+
+
 def plotMixedTimeSeries(df,Sugar):
     '''
     plotMiedTimeSeries returns a figure with two sub-plots. Left sub-plot is a stacked bar plot 
@@ -674,7 +787,7 @@ def prettyJointPlot(df):
 
     return jp
 
-def prettyKDEPlot(df,ax):
+def prettyKDEPlot(df,ax,color):
     '''
     prettyJointPlot draws a plot of two variables with bivariate core and adjoining univariate histograms.
 
@@ -687,7 +800,7 @@ def prettyKDEPlot(df,ax):
     x = df.iloc[:,0]; 
     y = df.iloc[:,1];
 
-    pal = sns.light_palette("Black", as_cmap=True)
+    pal = sns.light_palette(color, as_cmap=True)
     kd = sns.kdeplot(x,y,shade=True,shade_lowest=False,cmap=pal,ax=ax)
 
     if (np.max(np.max(df))<1000) and (np.min(np.min(df))>0): 
