@@ -49,7 +49,6 @@
 #    |-- sampleNumber
 #    |-- getFormattedTime
 #
-#
 
 # IMPORT NECESSARY LIBRARIES
 
