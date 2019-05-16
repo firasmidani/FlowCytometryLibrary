@@ -2,7 +2,7 @@
 
 # Firas Said Midani
 # Start date: 2018-04-24
-# Final date: 2019-01-17
+# Final date: 2019-05-16
 
 # DESCRIPTION Library of functions for analysis of flow cytometry data
 
