@@ -1,0 +1,7 @@
+# gitignore/Global/macOS.gitignore
+#
+# General
+.DS_Store
+
+# gitignore/Python.gitignore
+*.py[cod]
