@@ -20,6 +20,7 @@
 #
 #|-- Array mmanipulations
 #    |-- findOverlap
+#    |-- findModes
 #    |-- findIntersection
 #    |-- getSignalPDF
 #
@@ -310,8 +311,25 @@ def findIntersection(x_1,x_2,y_1,y_2,interval=1e-4):
     y_2_new = f2(new_x)
 
     idx = np.argwhere(np.diff(np.sign(y_1_new-y_2_new))).flatten()
+
+    mode_1 = x[np.where([yy==np.max(y_1) for yy in y_1])[0]]; # x-point at which y_1 is maximum
+    mode_2 = x[np.where([yy==np.max(y_2) for yy in y_2])[0]]; # x-point at which y_2 is maximum
+
+    # make sure that idx (intersection) is between the modes; other wise return None
+
+    # there may be more than one intersection
+
+    x_list = [];
+    y_list = [];
+
+    for idx_ii in idx:
+
+        if (idx_ii>mode_1) and (idx_ii<mode_2):
+
+            x_list.append(new_x[idx]);
+            y_1_new.append(y_1_new[idx]);
     
-    return new_x[idx],y_1_new[idx]
+    return x_list,y_list
 
 def findOverlap(arr_1,arr_2):
     '''
