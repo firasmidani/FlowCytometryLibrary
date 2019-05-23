@@ -284,7 +284,7 @@ def dataFromFCS(fcs,ZeroFloor=True):
 
     return dataFromFCS
 
-def findIntersection(x_1,x_2,y_1,y_2,interval=1e-4):
+def findIntersection(x_1,x_2,y_1,y_2,interval=1e-2):
     '''
     fundIntersection find the region of overlap between two numerical arrays, 
     creates a new array with x-values at an interval that user-specified,
@@ -312,10 +312,8 @@ def findIntersection(x_1,x_2,y_1,y_2,interval=1e-4):
 
     idx = np.argwhere(np.diff(np.sign(y_1_new-y_2_new))).flatten()
 
-    mode_1 = x[np.where([yy==np.max(y_1) for yy in y_1])[0]]; # x-point at which y_1 is maximum
-    mode_2 = x[np.where([yy==np.max(y_2) for yy in y_2])[0]]; # x-point at which y_2 is maximum
-
-    # make sure that idx (intersection) is between the modes; other wise return None
+    mode_1 = new_x[np.where(y_1_new==np.max(y_1_new))[0]][0];
+    mode_2 = new_x[np.where(y_2_new==np.max(y_2_new))[0]][0];
 
     # there may be more than one intersection
 
@@ -324,10 +322,12 @@ def findIntersection(x_1,x_2,y_1,y_2,interval=1e-4):
 
     for idx_ii in idx:
 
-        if (idx_ii>mode_1) and (idx_ii<mode_2):
+        idx_x = new_x[idx_ii]
 
-            x_list.append(new_x[idx]);
-            y_1_new.append(y_1_new[idx]);
+        if (idx_x>mode_1) and (idx_x<mode_2):
+
+            x_list.append(idx_x);
+            y_list.append(y_1_new[idx_ii]);
     
     return x_list,y_list
 
