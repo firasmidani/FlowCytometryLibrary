@@ -507,8 +507,11 @@ def getSignalPDF(events,params=[0,1000,1e-1]):
         
     ind = np.arange(params[0],params[1],params[2])
 
-    pdf = gkde(events).evaluate(ind)
-    
+    try:
+        pdf = gkde(events).evaluate(ind)
+    except:
+        pdf = np.repeat(np.nan,len(ind))
+
     return ind, pdf
 
 def initializeGrid():
