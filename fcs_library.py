@@ -877,6 +877,28 @@ def relativeAbundance(df,rfp=525,gfp=525):
     
     return counts/np.sum(counts);
 
+def removeMinValuePoints(df,bands=['FSC','SSC','SYTO','GFP','RFP']):
+    '''
+
+    ARGUMENTS
+
+    pandas.DataFrame wher each row is a flow event and columns are flow measurement variables (e.g. FSC-A)
+
+    RETURN
+    pandas.DataFrame (smaller or equal size to INPUT)
+
+    '''
+
+    signals = ['%s-A' % variable for variable in bands];
+    operation = '>';
+    thresholds = df.loc[:,sigmals].min().to_dict();
+
+    opreations_dict = dict([(signal,[operation,minimum]) for signal,minimum in thresholds.iteritems()]);
+
+    filtered_df = jointVoltageFilter(df,operations_dict);
+
+    return filtered_df
+
 def sampleData(df_all,N=1000,SYTO=400):
     '''
     sampleData extracts N flow cytometry events that have non-negative GFP and RFP signals 
@@ -894,13 +916,17 @@ def sampleData(df_all,N=1000,SYTO=400):
 
     '''
     
-    df_all = jointVoltageFilter(df_all,{'SYTO-A':['>',SYTO],'GFP-A':['>',0],'RFP-A':['>',0]});
-    
-    df_all = addPseudoCount(df_all.loc[:,['RFP-A','GFP-A','SYTO-A']]);
-    
-    df_sub = df_all.sample(min(N,df_all.shape[0]));
-    
-    numEvents = df_all.shape[0]
+    df_all = removeMinValuePoints(df_all);
+ 
+    if df_all.shape[0]==0:
+
+	df_sub = df_all;
+        numEvents = 0;    
+
+    elif df_all.shape[0]>0:
+
+        df_sub = df_all.sample(min(N,df_all.shape[0]));
+        numEvents = df_all.shape[0]
 
     return df_sub,numEvents
 
