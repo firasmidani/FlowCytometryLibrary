@@ -891,7 +891,7 @@ def removeMinValuePoints(df,bands=['FSC','SSC','SYTO','GFP','RFP']):
 
     signals = ['%s-A' % variable for variable in bands];
     operation = '>';
-    thresholds = df.loc[:,sigmals].min().to_dict();
+    thresholds = df.loc[:,signals].min().to_dict();
 
     opreations_dict = dict([(signal,[operation,minimum]) for signal,minimum in thresholds.iteritems()]);
 
@@ -899,7 +899,7 @@ def removeMinValuePoints(df,bands=['FSC','SSC','SYTO','GFP','RFP']):
 
     return filtered_df
 
-def sampleData(df_all,N=1000,SYTO=400):
+def sampleData(df_all,N=1000,SYTO=450):
     '''
     sampleData extracts N flow cytometry events that have non-negative GFP and RFP signals 
     and SYTO signal above user-defined threshold.
@@ -917,6 +917,8 @@ def sampleData(df_all,N=1000,SYTO=400):
     '''
     
     df_all = removeMinValuePoints(df_all);
+
+    df_all = df_all[df_all['SYTO-H']>SYTO];
  
     if df_all.shape[0]==0:
 
