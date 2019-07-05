@@ -893,7 +893,7 @@ def removeMinValuePoints(df,bands=['FSC','SSC','SYTO','GFP','RFP']):
     operation = '>';
     thresholds = df.loc[:,signals].min().to_dict();
 
-    opreations_dict = dict([(signal,[operation,minimum]) for signal,minimum in thresholds.iteritems()]);
+    operations_dict = dict([(signal,[operation,minimum]) for signal,minimum in thresholds.iteritems()]);
 
     filtered_df = jointVoltageFilter(df,operations_dict);
 
