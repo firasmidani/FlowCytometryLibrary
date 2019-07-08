@@ -295,7 +295,7 @@ def raiseNegInf(series):
     RETURN pandas.series
     '''
 
-    values = series.value;
+    values = series.values;
     series = series.replace(-np.inf,np.nanmin(values[values != -np.inf]));
 
     return series
