@@ -278,11 +278,22 @@ def dataFromFCS(fcs,ZeroFloor=True):
     dataFromFCS = fcs.data
 
     if ZeroFloor: 
-        dataFromFCS = dataFromFCS.replace(-np.inf,0)
+        dataFromFCS = dataFromFCS.apply(lambda x: raiseNegIf(x), axis=0, raw=False)        
 
     dataFromFCS = dataFromFCS.rename(columns=columns_dict);
-
+ 
     return dataFromFCS
+
+def raiseNegInf(series):
+    '''
+    designed to be a minimal lambda function
+    '''
+
+    values = series.value;
+    series = series.replace(-np.inf,np.nanmin(values[values != -np.inf]));
+
+    return series
+
 
 def findIntersection(x_1,x_2,y_1,y_2,interval=1e-2):
     '''
