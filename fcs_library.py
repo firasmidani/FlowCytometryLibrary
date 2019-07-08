@@ -278,7 +278,7 @@ def dataFromFCS(fcs,ZeroFloor=True):
     dataFromFCS = fcs.data
 
     if ZeroFloor: 
-        dataFromFCS = dataFromFCS.apply(lambda x: raiseNegIf(x), axis=0, raw=False)        
+        dataFromFCS = dataFromFCS.apply(lambda x: raiseNegInf(x), axis=0, raw=False)        
 
     dataFromFCS = dataFromFCS.rename(columns=columns_dict);
  
@@ -286,7 +286,13 @@ def dataFromFCS(fcs,ZeroFloor=True):
 
 def raiseNegInf(series):
     '''
+
+    raiseNegINF finds the non-infinity minimal value in a series and raises all negative infinity values to that minimum
+
     designed to be a minimal lambda function
+
+    ARGS pandas.series
+    RETURN pandas.series
     '''
 
     values = series.value;
@@ -919,7 +925,7 @@ def sampleData(df_all,N=1000,SYTO=450):
     df_all -- pandas.DataFrame where index is flow event identifier, 
               and variables include RFP-A, GFP-A, and SYTO-A
     N -- INT number of samples
-    SYTO -- INT voltage threshold for SYTO-A signal
+    SYTO -- INT voltage threshold for SYTO-H signal
 
     Returns
     df_sub -- sampled pandas.DataFrame.
