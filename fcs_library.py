@@ -942,7 +942,7 @@ def relativeAbundance(df,rfp=525,gfp=525):
     count -- list of relative abudnance for BO, BF, BT, and BV, respectively
     '''    
     
-    counts = countEvents(df,rfp,gfp)
+    counts = countEvents(df,signal="H",rfp=rfp,gfp=gfp)
     
     return counts/np.sum(counts);
 
