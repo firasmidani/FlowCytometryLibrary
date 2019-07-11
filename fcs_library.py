@@ -14,7 +14,9 @@
 #    |-- countEvents
 #    |-- jointMinVoltageFilter
 #    |-- minVoltageFilter
+#    |-- raiseNegInf
 #    |-- relativeAbundance
+#    |-- removeMinValuePoints
 #    |-- sampleData
 #
 #
@@ -30,6 +32,7 @@
 #    |-- readFCS
 #    |-- getEvents
 #    |-- getGates
+#    |-- whichSamples
 # 
 #
 #|-- Plotting & Visualization
@@ -39,6 +42,12 @@
 #    |-- plotMixedTimeSeries
 #    |-- prettyJointPlot
 #    |-- prettyKDEPlot
+#    |-- simplePrettyJointPlot
+#
+#
+#|-- Data Analysis
+#    |-- dirtyGMM
+#    |-- inferAbundance
 #
 #
 #|-- Syntax reductions
@@ -65,6 +74,8 @@ import time
 
 import matplotlib.gridspec as gridspec
 from scipy.stats import gaussian_kde as gkde
+from sklearn.mixture import GaussianMixture
+
 from FlowCytometryTools import FCMeasurement
 
 # SET PARAMETERS & STYLES
@@ -284,22 +295,47 @@ def dataFromFCS(fcs,ZeroFloor=True):
  
     return dataFromFCS
 
-def raiseNegInf(series):
-    '''
+def dirtyGMM(df):
+    
+    bic=[];
 
-    raiseNegINF finds the non-infinity minimal value in a series and raises all negative infinity values to that minimum
+    if df.shape[0]<100:
 
-    designed to be a minimal lambda function
+        summary = pd.DataFrame(columns=['RFP-H','GFP-H','Weight'])
 
-    ARGS pandas.series
-    RETURN pandas.series
-    '''
+        return summary, None
 
-    values = series.values;
-    series = series.replace(-np.inf,np.nanmin(values[values != -np.inf]));
+    # try model with a range of number of components and save BIC
+    for nc in range(1,13):
 
-    return series
+        gmm = GaussianMixture(n_components=nc,n_init=1,tol=1e-5,max_iter=2500,verbose=False)
+        bic.append(gmm.fit(df).bic(df))
 
+    # how many components give best modle (based on BIC)
+    model = np.where(bic==np.min(bic))[0][0] + 1
+
+    # run model
+    gmm = GaussianMixture(n_components=model,n_init=1,tol=1e-5,max_iter=2500,verbose=False)
+    gmm_fit = gmm.fit(df)
+
+    # save a pandas.DataFrame with each comoponent means and weights
+    summary = pd.DataFrame (data = gmm_fit.means_,
+                            columns=df.keys(),index=range(1,model+1))
+    summary.loc[:,'Weight'] = gmm_fit.weights_
+    summary = summary.sort_values(['RFP-H','GFP-H'])
+
+    # plot model data in joint plot
+    ax = simplePrettyJointPlot(df.loc[:,['RFP-H','GFP-H']])
+
+    # add scatter points for model predicted component means
+    model_x = summary['RFP-H']
+    model_y = summary['GFP-H']
+
+    ax.ax_joint.scatter(model_x,model_y,s=50,color=(0,0,0,0.5),lw=1.5,marker='x')
+
+    #abundance = inferAbundance(summary)
+    
+    return summary,ax
 
 def findIntersection(x_1,x_2,y_1,y_2,interval=1e-2):
     '''
@@ -807,7 +843,7 @@ def prettyJointPlot(df):
 
     jp = sns.jointplot(x=x,y=y,
                        kind="kde",stat_func=None,
-                       size=7,ratio=3,space=0,color="black");
+                       height=7,ratio=3,space=0,color="black");
 
     if (np.max(np.max(df))<1000) and (np.min(np.min(df))>0): 
         
@@ -854,6 +890,22 @@ def prettyKDEPlot(df,ax,color):
     #plt.close(jp.fig) # do not display figure
 
     return kd
+
+def raiseNegInf(series):
+    '''
+
+    raiseNegINF finds the non-infinity minimal value in a series and raises all negative infinity values to that minimum
+
+    designed to be a minimal lambda function
+
+    ARGS pandas.series
+    RETURN pandas.series
+    '''
+
+    values = series.values;
+    series = series.replace(-np.inf,np.nanmin(values[values != -np.inf]));
+
+    return series
 
 def readFCS(filepath):
     '''
@@ -916,7 +968,7 @@ def removeMinValuePoints(df,bands=['FSC','SSC','SYTO','GFP','RFP']):
 
     return filtered_df
 
-def sampleData(df_all,N=1000,SYTO=450):
+def sampleData(df_all,N=1000,SYTO=450,sample=True):
     '''
     sampleData extracts N flow cytometry events that have non-negative GFP and RFP signals 
     and SYTO signal above user-defined threshold.
@@ -937,15 +989,20 @@ def sampleData(df_all,N=1000,SYTO=450):
 
     df_all = df_all[df_all['SYTO-H']>SYTO];
  
-    if df_all.shape[0]==0:
+    if (df_all.shape[0]==0):
 
-	df_sub = df_all;
-        numEvents = 0;    
+        df_sub = df_all;
+        numEvents = 0;
 
-    elif df_all.shape[0]>0:
-
+    elif (df_all.shape[0]>0) and (sample):
+        
         df_sub = df_all.sample(min(N,df_all.shape[0]));
         numEvents = df_all.shape[0]
+
+    elif (df_all.shape[0]>0) and (not sample): 
+        
+        df_sub = df_all;
+        numEvents = df_all.shape[0];
 
     return df_sub,numEvents
 
@@ -959,3 +1016,63 @@ def sampleNumber(filename):
     '''
 
     return int(filename.split('.')[-1])
+
+def simplePrettyJointPlot(df,gfp=[500,500],rfp=[485,485]):
+    '''
+    prettyJointPlot draws a plot of two variables with bivariate core and adjoining univariate histograms.
+    Keyword arguments:
+    df -- pandas.dataframe where rows are events and columns are *two* flow cytometry variables (e.g. channels)
+    Returns seaborn plot.
+    '''
+
+    x = df.loc[:,'RFP-H']; 
+    y = df.loc[:,'GFP-H'];
+
+    jp = sns.jointplot(x=x,y=y,
+                       kind="hex",stat_func=None,
+                       height=4,ratio=3,space=0,color="red",
+                       xlim=(0,1000),ylim=(0,1000));
+    
+    jp.ax_joint.set_xlabel(x.name,fontsize=20);
+    jp.ax_joint.set_ylabel(y.name,fontsize=20);
+    jp.ax_joint.tick_params(labelsize=20);
+    
+    jp.ax_joint.grid(False)
+    
+    plt.setp(jp.ax_joint,xticks=[0,200,400,600,800,1000])
+    plt.setp(jp.ax_joint,yticks=[0,200,400,600,800,1000])
+    
+    [ii.set_fontsize(15) for ii in jp.ax_joint.get_xticklabels()+
+                                   jp.ax_joint.get_yticklabels()]
+
+    jp.ax_joint.axvline(x=rfp[0],ymin=0.0,ymax=0.5,color=(0,0,0,.5),lw=1.5)
+    jp.ax_joint.axvline(x=rfp[1],ymin=0.5,ymax=1,color=(0,0,0,.5),lw=1.5)
+    
+    jp.ax_joint.axhline(y=gfp[1],xmin=0.0,xmax=0.5,color=(0,0,0,.5),lw=1.5)
+    jp.ax_joint.axhline(y=gfp[1],xmin=0.5,xmax=1,color=(0,0,0,.5),lw=1.5)
+
+    jp.ax_marg_x.axvline(x=rfp[0],ymin=0.0,ymax=0.5,color=(0,0,0,.5),lw=1.5)
+    jp.ax_marg_x.axvline(x=rfp[1],ymin=0.5,ymax=1.0,color=(0,0,0,.5),lw=1.5)
+
+    jp.ax_marg_y.axhline(y=gfp[0],xmin=0.0,xmax=0.5,color=(0,0,0,.5),lw=1.5)
+    jp.ax_marg_y.axhline(y=gfp[1],xmin=0.5,xmax=1.0,color=(0,0,0,.5),lw=1.5)
+
+    plt.close(jp.fig) # do not display figure
+
+    return jp
+
+def whichSamples(mapping_sub,criteria):
+    ''' 
+    Args In
+
+        mapping_sub (pd.DataFrame) with the following as headers: Substrate, Species, TimePoint
+        criteria (list of lists) with the following order of Substrate, Species, TimePoint values
+            note: values must be in list format even if there is only one 
+
+    '''
+
+    criteria = {'Substrate':criteria[0],
+                'Species':criteria[1],
+                'TimePoint':criteria[2]}
+    
+    return mapping_sub[mapping_sub.isin(criteria).sum(1)==len(criteria)].index
