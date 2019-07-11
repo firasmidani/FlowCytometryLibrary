@@ -141,7 +141,7 @@ def conjunction(*conditions):
     '''
     return functools.reduce(np.logical_and,conditions)
 
-def countEvents(df,rfp=525,gfp=525):
+def countEvents(df,signal='H',rfp=525,gfp=525):
     '''
     countEvents computes number of events in each quadrant of a 2-dimensional flow cytometry plot 
     based on two user-defined gates
@@ -155,10 +155,10 @@ def countEvents(df,rfp=525,gfp=525):
     count -- list of event counts for BO, BF, BT, and BV, respectively
     '''    
     
-    count = [float(df[(df['RFP-A']<rfp) & (df['GFP-A']<gfp)].shape[0]), 
-             float(df[(df['RFP-A']>=rfp) & (df['GFP-A']<gfp)].shape[0]),
-             float(df[(df['RFP-A']<rfp) & (df['GFP-A']>=gfp)].shape[0]),
-             float(df[(df['RFP-A']>=rfp) & (df['GFP-A']>=gfp)].shape[0])]
+    count = [float(df[(df['RFP-%s' % signal]<rfp) & (df['GFP-%s' % signal]<gfp)].shape[0]), 
+             float(df[(df['RFP-%s' % signal]>=rfp) & (df['GFP-%s' % signal]<gfp)].shape[0]),
+             float(df[(df['RFP-%s' % signal]<rfp) & (df['GFP-%s' % signal]>=gfp)].shape[0]),
+             float(df[(df['RFP-%s' % signal]>=rfp) & (df['GFP-%s' % signal]>=gfp)].shape[0])]
     
     return count
 
